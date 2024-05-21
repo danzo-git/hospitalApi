@@ -22,7 +22,13 @@ class DoctorController extends AbstractController
             'controller_name' => 'DoctorController',
         ]);
     }
-
+    /**
+     * Adds a new doctor to the database.
+     *
+     * @param Request $request The HTTP request object.
+     * @param DoctorRepository $doctorRepo The repository for managing doctors.
+     * @return Response The JSON response containing the added doctor.
+     */
 
     #[Route('/api/addoctor', name: 'app_doctor')]
     public function addDoctor(Request  $request,DoctorRepository $doctorRepo ): Response

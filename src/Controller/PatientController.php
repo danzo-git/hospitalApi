@@ -37,7 +37,7 @@ class PatientController extends AbstractController
             'potential_illness'=>$request->get('potential_illness'),
             'file'=>$request->get('file'),
         ];
-        dd($patientData);
+       
        
         if($patientData!=null){
             $newPatient=$patientRepo->AddPatientRepo($patientData);

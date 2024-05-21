@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Controller;
-
+use App\DTO\HospitalDTO;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -15,16 +15,35 @@ class HospitalController extends AbstractController
     public function __construct(HospitalRepository $hospitalrepo){
         $this->hospitalrepo = $hospitalrepo;
     }
-    /**
-     * display Hospital
+  
+    // #[Route('/api/hospitale', name: 'app_hospitale')]
+    // public function index2(): Response
+    // {
+    //     return "ok";
+    // }
+  /**
+     * Display hospitals from the database.
+     *
+     * @param HospitalRepository $hospitalrepo The hospital repository
+     * @return Response
      */
-    #[Route('/api/hospital', name: 'app_hospital')]
+    #[Route('/api/hospitals', name: 'app_hospitals')]
     public function index(HospitalRepository $hospitalrepo): Response
     {
-        $hospital=$this->hospitalrepo->findAll();
+        $hospitals=$this->hospitalrepo->findAll();
+        $hospitalDTOs = [];
+
+        foreach ($hospitals as $hospital) {
+            $hospitalDTOs[] = new   HospitalDTO($hospital->getName(), $hospital->getPosition());
+        }
         
-        return $this->json($hospital);
+        return $this->json($hospitalDTOs);
+    
     }
+
+
+
+
     /**
      * add hospital
      */
