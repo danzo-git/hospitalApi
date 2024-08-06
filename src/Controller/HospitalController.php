@@ -16,11 +16,7 @@ class HospitalController extends AbstractController
         $this->hospitalrepo = $hospitalrepo;
     }
   
-    // #[Route('/api/hospitale', name: 'app_hospitale')]
-    // public function index2(): Response
-    // {
-    //     return "ok";
-    // }
+    
   /**
      * Display hospitals from the database.
      *
