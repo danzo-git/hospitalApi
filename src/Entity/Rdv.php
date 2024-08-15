@@ -2,10 +2,17 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
 use App\Repository\RdvRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: RdvRepository::class)]
+#[ORM\Table(name: '`rdv`')]
+#[ApiResource(
+    normalizationContext: ['groups' => ['rdv:read']],
+    denormalizationContext: ['groups' => ['rdv:write']],
+)]
 class Rdv
 {
     #[ORM\Id]
@@ -15,14 +22,17 @@ class Rdv
 
     #[ORM\ManyToOne(inversedBy: 'rdvs')]
     #[ORM\JoinColumn(nullable: false)]
+    // #[Groups(["rdv:read", "rdv:write","patient:read"])]
     private ?Patient $idPatient = null;
 
     #[ORM\ManyToOne(inversedBy: 'rdvs')]
     #[ORM\JoinColumn(nullable: false)]
+    // #[Groups(["rdv:read", "rdv:write","service:read"])]
     private ?Service $service = null;
 
     #[ORM\ManyToOne(inversedBy: 'rdvs')]
     #[ORM\JoinColumn(nullable: false)]
+    // #[Groups(["rdv:read", "rdv:write","doctor:read"])]
     private ?Doctor $doctor = null;
 
     public function getId(): ?int

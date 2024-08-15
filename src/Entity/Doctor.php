@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
 use App\Repository\DoctorRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -9,6 +10,11 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: DoctorRepository::class)]
+#[ORM\Table(name: '`doctor`')]
+#[ApiResource(
+    normalizationContext: ['groups' => ['doctor:read']],
+    denormalizationContext: ['groups' => ['doctor:write']]
+)]
 class Doctor
 {
     #[ORM\Id]
@@ -17,21 +23,27 @@ class Doctor
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["doctor:read", "doctor:write"])]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["doctor:read","doctor:write"])]
     private ?string $Speciality = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["doctor:read","doctor:write"])]
     private ?string $grade = null;
 
     #[ORM\Column]
+    #[Groups(["doctor:read","doctor:write"])]
     private ?int $yearOfExperience = null;
 
     #[ORM\ManyToMany(targetEntity: Hospital::class, mappedBy: 'idHospital')]
+    
     private Collection $hospitals;
 
     #[ORM\OneToMany(targetEntity: Rdv::class, mappedBy: 'doctor', orphanRemoval: true)]
+    
     private Collection $rdvs;
 
     public function __construct()

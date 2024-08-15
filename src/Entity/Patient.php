@@ -2,12 +2,19 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
 use App\Repository\PatientRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: PatientRepository::class)]
+#[ORM\Table(name: '`patient`')]
+#[ApiResource(
+    normalizationContext: ['groups' => ['patient:read']],
+    denormalizationContext: ['groups' => ['patient:write']]
+)]
 class Patient
 {
     #[ORM\Id]
@@ -16,30 +23,39 @@ class Patient
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["patient:read", "patient:write"])]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["patient:read", "patient:write"])]
     private ?string $firstName = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["patient:read", "patient:write"])]
     private ?string $email = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["patient:read", "patient:write"])]
     private ?string $number = null;
 
     #[ORM\Column]
+    #[Groups(["patient:read", "patient:write"])]   
     private ?int $age = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(["patient:read", "patient:write"])]
     private ?string $allergy = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(["patient:read", "patient:write"])]
     private ?string $potentialIllness = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(["patient:read", "patient:write"])]
     private ?string $file = null;
 
     #[ORM\OneToMany(targetEntity: Rdv::class, mappedBy: 'idPatient', orphanRemoval: true)]
+    #[Groups(["patient:read"])]
     private Collection $rdvs;
 
     public function __construct()

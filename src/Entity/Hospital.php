@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
 use App\Repository\HospitalRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -9,6 +10,11 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: HospitalRepository::class)]
+#[ORM\Table(name: '`hospital`')]
+#[ApiResource(
+    normalizationContext: ['groups' => ['hospital:read']],
+    denormalizationContext: ['groups' => ['hospital:write']],
+)]
 class Hospital
 {
     #[ORM\Id]
@@ -17,18 +23,19 @@ class Hospital
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["hospital:read", "hospital:write","doctor:read"])]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["hospital:read", "hospital:write"])]
     private ?string $position = null;
 
     #[ORM\ManyToMany(targetEntity: Doctor::class, inversedBy: 'hospitals')]
+    #[Groups(["hospital:read"])]
     private Collection $idHospital;
 
     #[ORM\OneToMany(targetEntity: Service::class, mappedBy: 'hopital', orphanRemoval: true)]
-    /**
-     * @Groups({"exclude_relationships"})
-     */
+    #[Groups(["hospital:read"])]
     private Collection $services;
 
     public function __construct()
