@@ -58,9 +58,17 @@ class Patient
     #[Groups(["patient:read"])]
     private Collection $rdvs;
 
+    #[ORM\OneToMany(targetEntity: Role::class, mappedBy: 'patient')]
+    private Collection $roles;
+
+    #[ORM\Column(length: 255)]
+    #[Groups(["patient:read", "patient:write"])]
+    private ?string $password = null;
+
     public function __construct()
     {
         $this->rdvs = new ArrayCollection();
+        $this->roles = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -190,6 +198,48 @@ class Patient
                 $rdv->setIdPatient(null);
             }
         }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Role>
+     */
+    public function getRoles(): Collection
+    {
+        return $this->roles;
+    }
+
+    public function addRole(Role $role): static
+    {
+        if (!$this->roles->contains($role)) {
+            $this->roles->add($role);
+            $role->setPatient($this);
+        }
+
+        return $this;
+    }
+
+    public function removeRole(Role $role): static
+    {
+        if ($this->roles->removeElement($role)) {
+            // set the owning side to null (unless already changed)
+            if ($role->getPatient() === $this) {
+                $role->setPatient(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getPassword(): ?string
+    {
+        return $this->password;
+    }
+
+    public function setPassword(string $password): static
+    {
+        $this->password = $password;
 
         return $this;
     }
