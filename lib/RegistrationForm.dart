@@ -7,6 +7,8 @@ import 'package:hospitalfront/PatientData.dart';
 import 'package:http/http.dart' as http;
 
 class RegistrationForm extends StatefulWidget {
+  const RegistrationForm({super.key});
+
   @override
   _RegistrationFormState createState() => _RegistrationFormState();
 }
@@ -24,25 +26,24 @@ class _RegistrationFormState extends State<RegistrationForm> {
   String? _selectedFile;
   String? _password;
 
-
   Future<http.Response> createPatient(PatientData patient) async {
-  final response = await http.post(
-    Uri.parse('http://10.0.2.2:8000/api/patients'),
-    headers: <String, String>{
-      'Content-Type': 'application/ld+json',
-    },
-    
-    body: jsonEncode(patient.toJson()),
-  );
+    final response = await http.post(
+      Uri.parse('http://10.0.2.2:8000/api/patients'),
+      headers: <String, String>{
+        'Content-Type': 'application/ld+json',
+      },
+      body: jsonEncode(patient.toJson()),
+    );
 
-  if (response.statusCode == 200) {
-    // Si la requête a réussi et les données ont été insérées
-    return response;
-  } else {
-    // Si la requête a échoué
-    throw Exception('Échec de la création de l\'hôpital');
+    if (response.statusCode == 201) {
+      // Si la requête a réussi et les données ont été insérées
+      return response;
+    } else {
+      // Si la requête a échoué
+      throw Exception('Échec de la création de l\'hôpital');
+    }
   }
-}
+
   Future<void> _pickFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
 
@@ -54,40 +55,42 @@ class _RegistrationFormState extends State<RegistrationForm> {
   }
 
   void _submitForm() {
-  if (_formKey.currentState!.validate()) {
-    _formKey.currentState!.save();
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
 
-    // Crée un objet PatientData avec les données du formulaire
-    PatientData newPatient = PatientData(
-      name: _name!,
-      firstName: _firstName!,
-      email: _email!,
-      number: _number!,
-      age: _age!,
-      allergy: _allergy,
-      potentialIllness: _potentialIllness,
-      file: _selectedFile,
-      password: _password!,
-    );
+      // Crée un objet PatientData avec les données du formulaire
+      PatientData newPatient = PatientData(
+        name: _name!,
+        firstName: _firstName!,
+        email: _email!,
+        number: _number!,
+        age: _age!,
+        allergy: _allergy,
+        potentialIllness: _potentialIllness,
+        file: _selectedFile,
+        password: _password!,
+      );
 
-    // Appelle la fonction createPatient pour envoyer les données à l'API
-    createPatient(newPatient).then((response) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Inscription réussie!')),
-      );
-    }).catchError((error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Échec de l\'inscription: $error')),
-      );
-    });
+      // Appelle la fonction createPatient pour envoyer les données à l'API
+      createPatient(newPatient).then((response) {
+        // ignore: use_build_context_synchronously
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Inscription réussie!')),
+        );
+      }).catchError((error) {
+        // ignore: use_build_context_synchronously
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Échec de l\'inscription: $error')),
+        );
+      });
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Inscription / Connexion'),
+        title: const Text('Inscription '),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -130,7 +133,8 @@ class _RegistrationFormState extends State<RegistrationForm> {
                 onSaved: (value) => _email = value,
               ),
               TextFormField(
-                decoration: const InputDecoration(labelText: 'Numéro de téléphone'),
+                decoration:
+                    const InputDecoration(labelText: 'Numéro de téléphone'),
                 keyboardType: TextInputType.phone,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -160,7 +164,8 @@ class _RegistrationFormState extends State<RegistrationForm> {
                 onSaved: (value) => _allergy = value,
               ),
               TextFormField(
-                decoration: const InputDecoration(labelText: 'Maladies potentielles'),
+                decoration:
+                    const InputDecoration(labelText: 'Maladies potentielles'),
                 onSaved: (value) => _potentialIllness = value,
               ),
               TextFormField(
@@ -192,15 +197,19 @@ class _RegistrationFormState extends State<RegistrationForm> {
                 onPressed: _submitForm,
                 child: const Text('Soumettre'),
               ),
-             
+              const SizedBox(height: 100),
+              ElevatedButton(
+                  onPressed: () => {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => Connexion()))
+                      },
+                  child: const Text("Connexion")),
             ],
-
-            
           ),
         ),
-         
       ),
     );
   }
 }
-
