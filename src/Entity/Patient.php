@@ -7,6 +7,9 @@ use App\Repository\PatientRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\PasswordHasher\PasswordHasherInterface;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: PatientRepository::class)]
@@ -15,7 +18,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
     normalizationContext: ['groups' => ['patient:read']],
     denormalizationContext: ['groups' => ['patient:write']]
 )]
-class Patient
+class Patient implements UserInterface,PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -39,7 +42,7 @@ class Patient
     private ?string $number = null;
 
     #[ORM\Column]
-    #[Groups(["patient:read", "patient:write"])]   
+    #[Groups(["patient:read", "patient:write"])]
     private ?int $age = null;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -203,11 +206,19 @@ class Patient
     }
 
     /**
-     * @return Collection<int, Role>
+     * @return array<string>
      */
-    public function getRoles(): Collection
+    public function getRoles(): array
     {
-        return $this->roles;
+        $roles = [];
+        foreach ($this->roles as $role) {
+            $roles[] = $role->getRole();
+        }
+
+        // guarantee every user at least has ROLE_USER
+        $roles[] = 'ROLE_USER';
+
+        return array_unique($roles);
     }
 
     public function addRole(Role $role): static
@@ -242,5 +253,22 @@ class Patient
         $this->password = $password;
 
         return $this;
+    }
+
+    public function eraseCredentials(): void
+    {
+        // If you store any temporary, sensitive data on the user, clear it here
+        // $this->plainPassword = null;
+    }
+
+    public function getSalt(): ?string
+    {
+        // not needed when using modern algorithms like bcrypt or argon2i
+        return null;
+    }
+
+    public function getUserIdentifier(): string
+    {
+        return $this->email;
     }
 }
