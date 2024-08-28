@@ -9,6 +9,8 @@ class PatientData {
   String? file;
   
   String? password;
+  
+  List? roles;
 
   PatientData(
       {required this.name,
@@ -19,7 +21,8 @@ class PatientData {
       required this.allergy,
       required this.potentialIllness,
       required this.file, 
-      required this.password});
+      required this.password, 
+      required this.roles});
 
   factory PatientData.fromJson(Map<String, dynamic> json) {
     return PatientData(
@@ -32,6 +35,7 @@ class PatientData {
       potentialIllness: json['potentialIllness'],
       file: json['file'], 
       password: json['password'],
+      roles: json['roles'],
     );
   }
 
@@ -46,6 +50,7 @@ class PatientData {
     data['potentialIllness'] = this.potentialIllness;
     data['file'] = this.file;
     data['password'] = this.password;
+    data['roles'] = roles;
     return data;
   }
 }

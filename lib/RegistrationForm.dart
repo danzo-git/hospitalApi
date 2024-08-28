@@ -25,6 +25,10 @@ class _RegistrationFormState extends State<RegistrationForm> {
   String? _potentialIllness;
   String? _selectedFile;
   String? _password;
+  List? _roles;
+
+  
+  
 
   Future<http.Response> createPatient(PatientData patient) async {
     final response = await http.post(
@@ -69,6 +73,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
         potentialIllness: _potentialIllness,
         file: _selectedFile,
         password: _password!,
+        roles: ["ROLE_USER"],  // Initialisation du rôle par défaut
       );
 
       // Appelle la fonction createPatient pour envoyer les données à l'API
