@@ -2,27 +2,43 @@
 
 namespace App\Entity;
 
-use ApiPlatform\Metadata\ApiResource;
-use App\Repository\PatientRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\PasswordHasher\PasswordHasherInterface;
-use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use ApiPlatform\Metadata\ApiResource;
+use App\Controller\PatientController;
 use Symfony\Component\Serializer\Annotation\Groups;
 
-#[ORM\Entity(repositoryClass: PatientRepository::class)]
-#[ORM\Table(name: '`patient`')]
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Put;
+use ApiPlatform\Metadata\Delete;
+
+#[ORM\Entity]
 #[ApiResource(
     normalizationContext: ['groups' => ['patient:read']],
-    denormalizationContext: ['groups' => ['patient:write']]
+    denormalizationContext: ['groups' => ['patient:write']],
+    operations: [
+       new Get(),
+       new Put(),
+       new Patch(),
+       new Delete(),
+        new Post(
+            name: 'createPatient', 
+            uriTemplate: '/patient/create', 
+            controller: PatientController::class
+        )
+    ]
 )]
-class Patient implements UserInterface,PasswordAuthenticatedUserInterface
+class Patient implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(["patient:read"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
@@ -33,7 +49,7 @@ class Patient implements UserInterface,PasswordAuthenticatedUserInterface
     #[Groups(["patient:read", "patient:write"])]
     private ?string $firstName = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, unique: true)]
     #[Groups(["patient:read", "patient:write"])]
     private ?string $email = null;
 
@@ -57,16 +73,18 @@ class Patient implements UserInterface,PasswordAuthenticatedUserInterface
     #[Groups(["patient:read", "patient:write"])]
     private ?string $file = null;
 
-    #[ORM\OneToMany(targetEntity: Rdv::class, mappedBy: 'idPatient', orphanRemoval: true)]
-    #[Groups(["patient:read"])]
-    private Collection $rdvs;
-
-    #[ORM\OneToMany(targetEntity: Role::class, mappedBy: 'patient')]
-    private Collection $roles;
-
     #[ORM\Column(length: 255)]
     #[Groups(["patient:read", "patient:write"])]
     private ?string $password = null;
+
+    #[ORM\ManyToMany(targetEntity: Role::class, inversedBy: 'patients')]
+    #[ORM\JoinTable(name: 'patient_roles')]
+    #[Groups(["patient:read" ])]
+    private Collection $roles;
+
+    #[ORM\OneToMany(targetEntity: Rdv::class, mappedBy: 'idPatient', orphanRemoval: true)]
+    #[Groups(["patient:read"])]
+    private Collection $rdvs;
 
     public function __construct()
     {
@@ -84,10 +102,9 @@ class Patient implements UserInterface,PasswordAuthenticatedUserInterface
         return $this->name;
     }
 
-    public function setName(string $name): static
+    public function setName(string $name): self
     {
         $this->name = $name;
-
         return $this;
     }
 
@@ -96,10 +113,9 @@ class Patient implements UserInterface,PasswordAuthenticatedUserInterface
         return $this->firstName;
     }
 
-    public function setFirstName(string $firstName): static
+    public function setFirstName(string $firstName): self
     {
         $this->firstName = $firstName;
-
         return $this;
     }
 
@@ -108,10 +124,9 @@ class Patient implements UserInterface,PasswordAuthenticatedUserInterface
         return $this->email;
     }
 
-    public function setEmail(string $email): static
+    public function setEmail(string $email): self
     {
         $this->email = $email;
-
         return $this;
     }
 
@@ -120,10 +135,9 @@ class Patient implements UserInterface,PasswordAuthenticatedUserInterface
         return $this->number;
     }
 
-    public function setNumber(string $number): static
+    public function setNumber(string $number): self
     {
         $this->number = $number;
-
         return $this;
     }
 
@@ -132,10 +146,9 @@ class Patient implements UserInterface,PasswordAuthenticatedUserInterface
         return $this->age;
     }
 
-    public function setAge(int $age): static
+    public function setAge(int $age): self
     {
         $this->age = $age;
-
         return $this;
     }
 
@@ -144,10 +157,9 @@ class Patient implements UserInterface,PasswordAuthenticatedUserInterface
         return $this->allergy;
     }
 
-    public function setAllergy(?string $allergy): static
+    public function setAllergy(?string $allergy): self
     {
         $this->allergy = $allergy;
-
         return $this;
     }
 
@@ -156,10 +168,9 @@ class Patient implements UserInterface,PasswordAuthenticatedUserInterface
         return $this->potentialIllness;
     }
 
-    public function setPotentialIllness(?string $potentialIllness): static
+    public function setPotentialIllness(?string $potentialIllness): self
     {
         $this->potentialIllness = $potentialIllness;
-
         return $this;
     }
 
@@ -168,10 +179,9 @@ class Patient implements UserInterface,PasswordAuthenticatedUserInterface
         return $this->file;
     }
 
-    public function setFile(?string $file): static
+    public function setFile(?string $file): self
     {
         $this->file = $file;
-
         return $this;
     }
 
@@ -183,7 +193,7 @@ class Patient implements UserInterface,PasswordAuthenticatedUserInterface
         return $this->rdvs;
     }
 
-    public function addRdv(Rdv $rdv): static
+    public function addRdv(Rdv $rdv): self
     {
         if (!$this->rdvs->contains($rdv)) {
             $this->rdvs->add($rdv);
@@ -193,50 +203,12 @@ class Patient implements UserInterface,PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function removeRdv(Rdv $rdv): static
+    public function removeRdv(Rdv $rdv): self
     {
         if ($this->rdvs->removeElement($rdv)) {
-            // set the owning side to null (unless already changed)
+            // Set the owning side to null (unless already changed)
             if ($rdv->getIdPatient() === $this) {
                 $rdv->setIdPatient(null);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return array<string>
-     */
-    public function getRoles(): array
-    {
-        $roles = [];
-        foreach ($this->roles as $role) {
-            $roles[] = $role->getRole();
-        }
-
-        // guarantee every user at least has ROLE_USER
-        $roles[] = 'ROLE_USER';
-
-        return array_unique($roles);
-    }
-
-    public function addRole(Role $role): static
-    {
-        if (!$this->roles->contains($role)) {
-            $this->roles->add($role);
-            $role->setPatient($this);
-        }
-
-        return $this;
-    }
-
-    public function removeRole(Role $role): static
-    {
-        if ($this->roles->removeElement($role)) {
-            // set the owning side to null (unless already changed)
-            if ($role->getPatient() === $this) {
-                $role->setPatient(null);
             }
         }
 
@@ -248,27 +220,52 @@ class Patient implements UserInterface,PasswordAuthenticatedUserInterface
         return $this->password;
     }
 
-    public function setPassword(string $password): static
+    public function setPassword(string $password): self
     {
         $this->password = $password;
+        return $this;
+    }
+
+    /**
+     * Returns the user roles.
+     * @return array
+     */
+    public function getRoles(): array
+    {
+        $roles = $this->roles->map(function(Role $role) {
+            return $role->getName();
+        })->toArray();
+
+        // Every user should have at least ROLE_USER
+        $roles[] = 'ROLE_USER';
+
+        return array_unique($roles);
+    }
+
+    public function addRole(Role $role): self
+    {
+        if (!$this->roles->contains($role)) {
+            $this->roles->add($role);
+        }
 
         return $this;
     }
 
-    public function eraseCredentials(): void
-    {
-        // If you store any temporary, sensitive data on the user, clear it here
-        // $this->plainPassword = null;
-    }
+ 
 
-    public function getSalt(): ?string
+    public function removeRole(Role $role): self
     {
-        // not needed when using modern algorithms like bcrypt or argon2i
-        return null;
+        $this->roles->removeElement($role);
+        return $this;
     }
 
     public function getUserIdentifier(): string
     {
         return $this->email;
+    }
+
+    public function eraseCredentials(): void
+    {
+        // Clear sensitive data
     }
 }

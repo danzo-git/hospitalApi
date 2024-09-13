@@ -49,15 +49,12 @@ class Doctor
     #[ORM\OneToMany(targetEntity: Disponibilite::class, mappedBy: 'medecin')]
     private Collection $disponibilites;
 
-    #[ORM\OneToMany(targetEntity: Role::class, mappedBy: 'doctor')]
-    private Collection $roles;
-
+  
     public function __construct()
     {
         $this->hospitals = new ArrayCollection();
         $this->rdvs = new ArrayCollection();
         $this->disponibilites = new ArrayCollection();
-        $this->roles = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -200,33 +197,5 @@ class Doctor
         return $this;
     }
 
-    /**
-     * @return Collection<int, Role>
-     */
-    public function getRoles(): Collection
-    {
-        return $this->roles;
-    }
-
-    public function addRole(Role $role): static
-    {
-        if (!$this->roles->contains($role)) {
-            $this->roles->add($role);
-            $role->setDoctor($this);
-        }
-
-        return $this;
-    }
-
-    public function removeRole(Role $role): static
-    {
-        if ($this->roles->removeElement($role)) {
-            // set the owning side to null (unless already changed)
-            if ($role->getDoctor() === $this) {
-                $role->setDoctor(null);
-            }
-        }
-
-        return $this;
-    }
+    
 }
