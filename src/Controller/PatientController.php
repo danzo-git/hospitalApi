@@ -7,41 +7,38 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use App\Repository\PatientRepository;
 use Symfony\Component\HttpFoundation\Request;
+use App\Entity\Patient;
+use App\Entity\Role;
+use App\Repository\RoleRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpKernel\Attribute\AsController;
+use App\Service\PatientHandler;
+
+#[AsController]
 class PatientController extends AbstractController
 {
 
-    private  $patientRepo;
-    public function __construct(PatientRepository $patientRepo){
-        $this->patientRepo=$patientRepo;
+   
+    public function __construct( private PatientHandler $patientHandler, private EntityManagerInterface $entityManager){
+       
     }
-    #[Route('/patient', name: 'app_patient')]
-    public function index(): Response
+    
+    public function __invoke(Patient $patient): Patient
     {
-        return $this->render('patient/index.html.twig', [
-            'controller_name' => 'PatientController',
-        ]);
+
+        $this->patientHandler->handle($patient, $this->entityManager);
+
+        sprintf('%s %s', $patient->getName(), $patient->getFirstName());
+        return $patient;
     }
 
 
-    #[Route('/api/addPatient', name: 'app_patient')]
-    public function addPatient(Request $request,PatientRepository $patientRepo)
-    {
-       
-         $patientData= [
-          'name'=>$request->get('name'),
-            'first_name'=>$request->get('first_name'),
-            'email'=>$request->get('email'),
-            'number'=>$request->get('number'),
-            'age'=>$request->get('age'),
-            'allergy'=>$request->get('allergy'),
-            'potential_illness'=>$request->get('potential_illness'),
-            'file'=>$request->get('file'),
-        ];
-       
-       
-        if($patientData!=null){
-            $newPatient=$patientRepo->AddPatientRepo($patientData);
-        }
-        return $this->Json($newPatient);
-    }
+    
+
+
+
+ 
+
+
+
 }

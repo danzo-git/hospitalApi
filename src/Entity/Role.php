@@ -1,11 +1,11 @@
 <?php
-
 namespace App\Entity;
 
-use App\Repository\RoleRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: RoleRepository::class)]
+#[ORM\Entity]
 class Role
 {
     #[ORM\Id]
@@ -13,14 +13,16 @@ class Role
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, unique: true)]
     private ?string $name = null;
 
-    #[ORM\ManyToOne(inversedBy: 'roles')]
-    private ?Doctor $doctor = null;
+    #[ORM\ManyToMany(targetEntity: Patient::class, mappedBy: 'roles')]
+    private Collection $patients;
 
-    #[ORM\ManyToOne(inversedBy: 'roles')]
-    private ?Patient $patient = null;
+    public function __construct()
+    {
+        $this->patients = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -32,33 +34,32 @@ class Role
         return $this->name;
     }
 
-    public function setName(string $name): static
+    public function setName(string $name): self
     {
         $this->name = $name;
+        return $this;
+    }
+
+    public function getPatients(): Collection
+    {
+        return $this->patients;
+    }
+
+    public function addPatient(Patient $patient): self
+    {
+        if (!$this->patients->contains($patient)) {
+            $this->patients->add($patient);
+            $patient->addRole($this);
+        }
 
         return $this;
     }
 
-    public function getDoctor(): ?Doctor
+    public function removePatient(Patient $patient): self
     {
-        return $this->doctor;
-    }
-
-    public function setDoctor(?Doctor $doctor): static
-    {
-        $this->doctor = $doctor;
-
-        return $this;
-    }
-
-    public function getPatient(): ?Patient
-    {
-        return $this->patient;
-    }
-
-    public function setPatient(?Patient $patient): static
-    {
-        $this->patient = $patient;
+        if ($this->patients->removeElement($patient)) {
+            $patient->removeRole($this);
+        }
 
         return $this;
     }
