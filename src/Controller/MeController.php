@@ -3,30 +3,34 @@
 namespace App\Controller;
 
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Bundle\SecurityBundle\Security; 
+use Symfony\Component\Serializer\SerializerInterface;
 use App\Entity\Patient;
-use Symfony\Bundle\SecurityBundle\Security;
-#[AsController]
-class MeController
+
+class MeController extends AbstractController
 {
-    private $security;
-    private $patient;
-    public function __construct(Security $security ,Patient $patient)
+    private Security $security;
+    private SerializerInterface $serializer;
+
+    public function __construct(Security $security, SerializerInterface $serializer)
     {
         $this->security = $security;
-        $this->patient = $patient;
+        $this->serializer = $serializer;
     }
 
     #[Route('/api/me', name: 'api_me', methods: ['GET'])]
-    public function __invoke()
+    public function __invoke(): JsonResponse
     {
-        $user = $this->security->getUser();
-        $pat=$this->patient->getName();
-dd($pat);
-        return new JsonResponse([
-           'user'=>$user
-            // Ajoutez d'autres informations utilisateur si nécessaire
-        ]);
+        $user = $this->getUser();
+
+        if (!$user instanceof Patient) {
+            return new JsonResponse(['error' => 'User not authenticated'], JsonResponse::HTTP_UNAUTHORIZED);
+        }
+
+        $data = $this->serializer->serialize($user, 'json', ['groups' => ['patient:read']]);
+
+        return new JsonResponse($data, JsonResponse::HTTP_OK, [], true);
     }
 }

@@ -4,7 +4,6 @@ namespace App\Service;
 use App\Entity\Patient;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\Role;
-use App\Repository\RoleRepository;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class PatientHandler
