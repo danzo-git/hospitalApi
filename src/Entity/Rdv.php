@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
 use App\Repository\RdvRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -34,6 +35,12 @@ class Rdv
     #[ORM\JoinColumn(nullable: false)]
     // #[Groups(["rdv:read", "rdv:write","doctor:read"])]
     private ?Doctor $doctor = null;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    private ?\DateTimeInterface $dateHeureDebut = null;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    private ?\DateTimeInterface $dateHeureFin = null;
 
     public function getId(): ?int
     {
@@ -72,6 +79,30 @@ class Rdv
     public function setDoctor(?Doctor $doctor): static
     {
         $this->doctor = $doctor;
+
+        return $this;
+    }
+
+    public function getDateHeureDebut(): ?\DateTimeInterface
+    {
+        return $this->dateHeureDebut;
+    }
+
+    public function setDateHeureDebut(\DateTimeInterface $dateHeureDebut): static
+    {
+        $this->dateHeureDebut = $dateHeureDebut;
+
+        return $this;
+    }
+
+    public function getDateHeureFin(): ?\DateTimeInterface
+    {
+        return $this->dateHeureFin;
+    }
+
+    public function setDateHeureFin(\DateTimeInterface $dateHeureFin): static
+    {
+        $this->dateHeureFin = $dateHeureFin;
 
         return $this;
     }

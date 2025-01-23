@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Repository;
-
+use App\Entity\Doctor;
 use App\Entity\Rdv;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -48,5 +48,21 @@ class RdvRepository extends ServiceEntityRepository
 
     public function CreateRdvRepo(){
         
+    }
+
+    public function isSlotReserved(Doctor $doctor, \DateTimeInterface $start, \DateTimeInterface $end): bool
+    {
+        $count = $this->createQueryBuilder('r')
+            ->select('COUNT(r.id)')
+            ->where('r.doctor = :doctor')
+            ->andWhere('r.dateHeureDebut < :end')
+            ->andWhere('r.dateHeureFin > :start')
+            ->setParameter('doctor', $doctor)
+            ->setParameter('start', $start)
+            ->setParameter('end', $end)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return $count > 0;
     }
 }

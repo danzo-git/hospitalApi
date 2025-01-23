@@ -6,6 +6,9 @@ use ApiPlatform\Metadata\ApiResource;
 use App\Repository\ServiceRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -15,6 +18,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
     normalizationContext: ['groups' => ['service:read']],
     denormalizationContext: ['groups' => ['service:write']]
 )]
+#[ApiFilter(SearchFilter::class, properties: ['hospital' => 'exact'])]
 class Service
 {
     #[ORM\Id]
@@ -40,10 +44,26 @@ class Service
     #[Groups(["service:read", "service:write","hopital:read"])]
   
     private ?Hospital $hopital = null;
+    #[Groups(["service:read", "service:write"])]
+    #[ORM\Column(length: 255)]
+    private ?string $subtitle = null;
+    #[Groups(["service:read", "service:write"])]
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $image = null;
+    #[Groups(["service:read", "service:write"])]
+    #[ORM\Column(nullable: true)]
+    private ?float $price = null;
 
+    #[ORM\ManyToOne(inversedBy: 'services')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Doctor $doctor = null;
+    #[Groups(["service:read", "service:write"])]
+    #[ORM\ManyToMany(targetEntity: Doctor::class, mappedBy: 'services')]
+    private $doctors;
     public function __construct()
     {
         $this->rdvs = new ArrayCollection();
+        $this->doctors = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -117,5 +137,73 @@ class Service
         return $this;
     }
 
+    public function getSubtitle(): ?string
+    {
+        return $this->subtitle;
+    }
+
+    public function setSubtitle(string $subtitle): static
+    {
+        $this->subtitle = $subtitle;
+
+        return $this;
+    }
+
+    public function getImage(): ?string
+    {
+        return $this->image;
+    }
+
+    public function setImage(?string $image): static
+    {
+        $this->image = $image;
+
+        return $this;
+    }
+
+    public function getPrice(): ?float
+    {
+        return $this->price;
+    }
+
+    public function setPrice(?float $price): static
+    {
+        $this->price = $price;
+
+        return $this;
+    }
+
+    public function getDoctor(): ?Doctor
+    {
+        return $this->doctor;
+    }
+
+    public function setDoctor(?Doctor $doctor): static
+    {
+        $this->doctor = $doctor;
+
+        return $this;
+    }
+
+
+    public function addDoctor(Doctor $doctor): self
+    {
+        if (!$this->doctors->contains($doctor)) {
+            $this->doctors[] = $doctor;
+            $doctor->addService($this);
+        }
+
+        return $this;
+    }
+
+    public function removeDoctor(Doctor $doctor): self
+    {
+        if ($this->doctors->removeElement($doctor)) {
+            $doctor->removeService($this);
+        }
+
+        return $this;
+    }
+    
     
 }

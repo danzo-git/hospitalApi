@@ -45,4 +45,19 @@ class DisponibiliteRepository extends ServiceEntityRepository
     //            ->getOneOrNullResult()
     //        ;
     //    }
+
+   /**
+       * @return Disponibilite[] Returns an array of Disponibilite objects
+     */
+       public function findDisponibilitesByMedecin($id): array
+       {
+           return $this->createQueryBuilder('d')
+               ->andWhere('d.medecin = :id')
+               ->setParameter('id', $id)
+               ->orderBy('d.id', 'ASC')
+               
+               ->getQuery()
+               ->getResult()
+           ;
+       }
 }
