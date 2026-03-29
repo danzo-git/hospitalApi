@@ -20,5 +20,14 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
+    App\Entity\Patient:
+        autowire: true
+
+    App\Controller\MeController:
+        arguments:
+            $security: '@security.helper'
+        tags: ['controller.service_arguments']
+        public: true
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

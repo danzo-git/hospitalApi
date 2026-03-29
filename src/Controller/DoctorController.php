@@ -7,6 +7,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use App\Repository\DoctorRepository;
 use App\Entity\Doctor;
+use PHPUnit\Util\Json;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 class DoctorController extends AbstractController
 {
@@ -46,6 +48,25 @@ class DoctorController extends AbstractController
         $doctor=$doctorRepo->addDoctorRepo($DoctorData);
       }
       return $this->json($doctor);
+    }
+
+    #[Route('/api/doctors/{speciality}', name: 'app_doctor')]
+    public function getDoctorsBySpeciality($speciality, DoctorRepository $doctorRepo): JsonResponse
+    {
+         
+      $doctors = $doctorRepo->getDoctorsBySpecialityRepo($speciality);
+        
+      if (empty($doctors)) {
+          return $this->json(['message' => 'Aucun docteur trouvé pour cette spécialité.'], Response::HTTP_NOT_FOUND);
+      }
+
+      return $this->json($doctors);
+    }
+
+
+    public function findDoctorsByServiceAndHospital(int $serviceId, int $hospitalId): array
+    {
+        return $this->doctorRepo->findDoctorsByServiceAndHospitalRepo($serviceId, $hospitalId);
     }
 
 }

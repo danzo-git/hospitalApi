@@ -51,6 +51,10 @@ class ServiceRepository extends ServiceEntityRepository
     //        ;
     //    }
 
+   public function getHospitalByService($hopitalId) {
+       
+   }
+
     public function addServiceRepo($serviceData)
     {
         $entityManager = $this->getEntityManager();

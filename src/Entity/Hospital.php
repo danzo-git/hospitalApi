@@ -8,13 +8,16 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
-
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 #[ORM\Entity(repositoryClass: HospitalRepository::class)]
 #[ORM\Table(name: '`hospital`')]
 #[ApiResource(
     normalizationContext: ['groups' => ['hospital:read']],
     denormalizationContext: ['groups' => ['hospital:write']],
 )]
+#[ApiFilter(SearchFilter::class, properties: ['services' => 'exact'])]
+
 class Hospital
 {
     #[ORM\Id]
@@ -37,6 +40,10 @@ class Hospital
     #[ORM\OneToMany(targetEntity: Service::class, mappedBy: 'hopital', orphanRemoval: true)]
     #[Groups(["hospital:read"])]
     private Collection $services;
+
+    #[Groups(["hospital:read", "hospital:write"])]
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $image = null;
 
     public function __construct()
     {
@@ -123,6 +130,18 @@ class Hospital
                 $service->setHopital(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getImage(): ?string
+    {
+        return $this->image;
+    }
+
+    public function setImage(?string $image): static
+    {
+        $this->image = $image;
 
         return $this;
     }

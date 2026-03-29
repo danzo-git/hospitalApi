@@ -4,17 +4,114 @@ namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
 use App\Repository\DoctorRepository;
+
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;	
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
+use ApiPlatform\Metadata\Delete;
+use App\Controller\DoctorController;
+use App\Controller\FindDoctorByServiceAndHospitalController;
+
+
 
 #[ORM\Entity(repositoryClass: DoctorRepository::class)]
 #[ORM\Table(name: '`doctor`')]
 #[ApiResource(
+    operations: [
+        new GetCollection(),
+        new Get(),
+        new Post(),
+        new Put(),
+        new Delete(),
+        new Get(
+            uriTemplate: '/doctors/{speciality}',
+            controller: DoctorController::class,
+            openapiContext: [
+                'summary' => 'Récupère la liste des docteurs pour une spécialité donnée',
+                'parameters' => [
+                    [
+                        'name' => 'speciality',
+                        'in' => 'path',
+                        'required' => true,
+                        'description' => 'La spécialité des docteurs à récupérer',
+                        'schema' => ['type' => 'string', 'example' => 'cardiologie']
+                    ]
+                ],
+                'responses' => [
+                    '200' => [
+                        'description' => 'Liste des docteurs',
+                        'content' => [
+                            'application/json' => [
+                                'schema' => [
+                                    'type' => 'array',
+                                    'items' => [
+                                        'type' => 'object',
+                                        'properties' => [
+                                            'id' => ['type' => 'integer', 'example' => 1],
+                                            'name' => ['type' => 'string', 'example' => 'Dr. Dupont'],
+                                            'speciality' => ['type' => 'string', 'example' => 'cardiologie'],
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ],
+                    '404' => [
+                        'description' => 'Aucun docteur trouvé pour cette spécialité'
+                    ]
+                ]
+            ]
+        ),
+        new GetCollection(
+            uriTemplate: '/doctors_by_service_and_hospital',
+            controller: FindDoctorByServiceAndHospitalController::class,
+            openapiContext: [
+                'summary' => 'Récupère les docteurs pour un service et un hôpital donnés',
+                'parameters' => [
+                    [
+                        'name' => 'service',
+                        'in' => 'query',
+                        'required' => true,
+                        'description' => 'ID du service',
+                        'schema' => ['type' => 'integer']
+                    ],
+                    [
+                        'name' => 'hospital',
+                        'in' => 'query',
+                        'required' => true,
+                        'description' => 'ID de lhôpital',
+                        'schema' => ['type' => 'integer']
+                    ]
+                ],
+                'responses' => [
+                    '200' => [
+                        'description' => 'Liste des docteurs filtrée',
+                        'content' => [
+                            'application/json' => [
+                                'schema' => [
+                                    'type' => 'array',
+                                    'items' => [
+                                        '$ref' => '#/components/schemas/Doctor'
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ],
+                    '404' => ['description' => 'Aucun docteur trouvé'],
+                ]
+            ]
+        )
+    ],
     normalizationContext: ['groups' => ['doctor:read']],
     denormalizationContext: ['groups' => ['doctor:write']]
 )]
+
 class Doctor
 {
     #[ORM\Id]
@@ -49,15 +146,40 @@ class Doctor
     #[ORM\OneToMany(targetEntity: Disponibilite::class, mappedBy: 'medecin')]
     private Collection $disponibilites;
 
-    #[ORM\OneToMany(targetEntity: Role::class, mappedBy: 'doctor')]
-    private Collection $roles;
+   
+    #[Groups(["doctor:read","doctor:write"])]
+    #[ORM\ManyToMany(targetEntity: Service::class, inversedBy: 'doctors')]
+    #[ORM\JoinTable(name: 'doctor_service')]
+    private $services;
 
-    public function __construct()
+  private $doctorRepository;
+
+  #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+  private ?\DateTimeInterface $dateDebut = null;
+
+  #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+  private ?\DateTimeInterface $heureDebutMatin = null;
+
+  #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+  private ?\DateTimeInterface $heureDebutApresMidi = null;
+
+  #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+  private ?\DateTimeInterface $heureFinApresMidi = null;
+
+  #[ORM\Column(nullable: true)]
+  private ?array $joursTravailles = [];
+
+  #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+  private ?\DateTimeInterface $heureFinMatin = null;
+    public function __construct(
+        DoctorRepository $doctorRepository
+    )
     {
         $this->hospitals = new ArrayCollection();
         $this->rdvs = new ArrayCollection();
         $this->disponibilites = new ArrayCollection();
-        $this->roles = new ArrayCollection();
+        $this->services = new ArrayCollection();
+        $this->doctorRepository = $doctorRepository;
     }
 
     public function getId(): ?int
@@ -201,32 +323,104 @@ class Doctor
     }
 
     /**
-     * @return Collection<int, Role>
+     * @return Collection<int, Service>
      */
-    public function getRoles(): Collection
+    public function getServices(): Collection
     {
-        return $this->roles;
+        return $this->services;
     }
 
-    public function addRole(Role $role): static
+    // Méthodes d'ajout et de suppression
+    public function addService(Service $service): self
     {
-        if (!$this->roles->contains($role)) {
-            $this->roles->add($role);
-            $role->setDoctor($this);
+        if (!$this->services->contains($service)) {
+            $this->services[] = $service;
+            $service->addDoctor($this);
         }
 
         return $this;
     }
 
-    public function removeRole(Role $role): static
+    public function removeService(Service $service): self
     {
-        if ($this->roles->removeElement($role)) {
-            // set the owning side to null (unless already changed)
-            if ($role->getDoctor() === $this) {
-                $role->setDoctor(null);
-            }
+        if ($this->services->removeElement($service)) {
+            $service->removeDoctor($this);
         }
 
         return $this;
     }
+
+    public function getDateDebut(): ?\DateTimeInterface
+    {
+        return $this->dateDebut;
+    }
+
+    public function setDateDebut(?\DateTimeInterface $dateDebut): static
+    {
+        $this->dateDebut = $dateDebut;
+
+        return $this;
+    }
+
+    public function getHeureDebutMatin(): ?\DateTimeInterface
+    {
+        return $this->heureDebutMatin;
+    }
+
+    public function setHeureDebutMatin(?\DateTimeInterface $heureDebutMatin): static
+    {
+        $this->heureDebutMatin = $heureDebutMatin;
+
+        return $this;
+    }
+
+    public function getHeureDebutApresMidi(): ?\DateTimeInterface
+    {
+        return $this->heureDebutApresMidi;
+    }
+
+    public function setHeureDebutApresMidi(?\DateTimeInterface $heureDebutApresMidi): static
+    {
+        $this->heureDebutApresMidi = $heureDebutApresMidi;
+
+        return $this;
+    }
+
+    public function getHeureFinApresMidi(): ?\DateTimeInterface
+    {
+        return $this->heureFinApresMidi;
+    }
+
+    public function setHeureFinApresMidi(?\DateTimeInterface $heureFinApresMidi): static
+    {
+        $this->heureFinApresMidi = $heureFinApresMidi;
+
+        return $this;
+    }
+
+    public function getJoursTravailles(): ?array
+    {
+        return $this->joursTravailles;
+    }
+
+    public function setJoursTravailles(?array $joursTravailles): static
+    {
+        $this->joursTravailles = $joursTravailles;
+
+        return $this;
+    }
+
+    public function getHeureFinMatin(): ?\DateTimeInterface
+    {
+        return $this->heureFinMatin;
+    }
+
+    public function setHeureFinMatin(?\DateTimeInterface $heureFinMatin): static
+    {
+        $this->heureFinMatin = $heureFinMatin;
+
+        return $this;
+    }
+
+ 
 }
